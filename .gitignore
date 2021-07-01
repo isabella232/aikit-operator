@@ -7,6 +7,9 @@
 *.dylib
 bin
 
+# direnv
+.envrc
+
 # editor and IDE paraphernalia
 .idea
 *.swp
