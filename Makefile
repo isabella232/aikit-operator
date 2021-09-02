@@ -1,8 +1,26 @@
-OC_PROJECT ?= redhat-ods-applications
-IMAGE_TAG_BASE ?= registry.connect.redhat.com/intel/aikit-operator
-VERSION ?= 2021.2.0
-OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
+#
+# Copyright (c) 2021 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# VERSION defines the project version for the bundle.
+# Update this value when you upgrade the version of your project.
+# To re-generate a bundle for another specific version without changing the standard setup, you can:
+# - use the VERSION as arg of the bundle target (e.g make bundle VERSION=2021.2.0)
+# - use environment variables to overwrite this value (e.g export VERSION=2021.2.0)
+GENERIC_VERSION ?= 2021.2.0
+VERSION ?= ${GENERIC_VERSION}-dev-`git rev-parse --short HEAD`
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -23,28 +41,18 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+OC_PROJECT ?= redhat-ods-applications
+IMAGE_TAG_BASE ?= registry.connect.redhat.com/intel/aikit-operator
+
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
-
-# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
-# These images MUST exist in a registry and be pull-able.
-BUNDLE_IMGS ?= $(BUNDLE_IMG)
-
-# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(VERSION)
-
-# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
-ifneq ($(origin CATALOG_BASE_IMG), undefined)
-FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
-endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
 version: # show version
 	@echo ${VERSION}
-	# TODO: write this version to version: bundle/manifests/aikit-operator.clusterserviceversion.yaml
 
 all: docker-build
 
@@ -64,24 +72,16 @@ all: docker-build
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-##@ Prerequisite Commands
+##@ Build
+docker-build: set-vars ## Calls set-vars and then builds the aikit-operator image with the manager.
+	docker build --no-cache -t ${IMG} .
 
-.PHONY: helm-operator
-HELM_OPERATOR = $(shell pwd)/bin/helm-operator
-helm-operator: ## Downloads helm-operator locally if necessary, preferring the $(pwd)/bin path over global if both exist.
-ifeq (,$(wildcard $(HELM_OPERATOR)))
-ifeq (,$(shell which helm-operator 2>/dev/null))
-	@{ \
-	set -e ;\
-	mkdir -p $(dir $(HELM_OPERATOR)) ;\
-	echo "Downloading helm-operator ..." ;\
-	curl -SLo $(HELM_OPERATOR) https://github.com/operator-framework/operator-sdk/releases/download/v1.8.0/helm-operator_$(OS)_$(ARCH) ;\
-	chmod +x $(HELM_OPERATOR) ;\
-	}
-else
-HELM_OPERATOR = $(shell which helm-operator)
-endif
-endif
+docker-push: ## Pushes the aikit-operator image to $(IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
+	docker push ${IMG}
+	$(MAKE) set-defaults
+
+OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
 
 .PHONY: kustomize
 KUSTOMIZE = $(shell pwd)/bin/kustomize
@@ -100,20 +100,21 @@ KUSTOMIZE = $(shell which kustomize)
 endif
 endif
 
-.PHONY: opm
-OPM = ./bin/opm
-opm: ## Downloads opm locally if necessary and install to $(pwd)/bin.
-ifeq (,$(wildcard $(OPM)))
-ifeq (,$(shell which opm 2>/dev/null))
+##@ Prerequisite Commands
+.PHONY: helm-operator
+HELM_OPERATOR = $(shell pwd)/bin/helm-operator
+helm-operator: ## Downloads helm-operator locally if necessary, preferring the $(pwd)/bin path over global if both exist.
+ifeq (,$(wildcard $(HELM_OPERATOR)))
+ifeq (,$(shell which helm-operator 2>/dev/null))
 	@{ \
 	set -e ;\
-	mkdir -p $(dir $(OPM)) ;\
-	echo "Downloading opm ..." ;\
-	curl -SLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.17.3/$(OS)-$(ARCH)-opm ;\
-	chmod +x $(OPM) ;\
+	mkdir -p $(dir $(HELM_OPERATOR)) ;\
+	echo "Downloading helm-operator ..." ;\
+	curl -SLo $(HELM_OPERATOR) https://github.com/operator-framework/operator-sdk/releases/download/v1.8.0/helm-operator_$(OS)_$(ARCH) ;\
+	chmod +x $(HELM_OPERATOR) ;\
 	}
 else
-OPM = $(shell which opm)
+HELM_OPERATOR = $(shell which helm-operator)
 endif
 endif
 
@@ -136,15 +137,10 @@ set-vars: kustomize ## Set OC_PROJECT, IMAGE_TAG_BASE and VERSION values by call
 
 set-defaults: kustomize ## Sets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their default values
 	@unset OC_PROJECT IMAGE_TAG_BASE VERSION && $(MAKE) set-vars
-	
-##@ Build Related
-
-docker-build: set-vars ## Calls set-vars and then builds the aikit-operator image with the manager.
-	docker build --no-cache -t ${IMG} . || exit 0
-
-docker-push: ## Pushes the aikit-operator image to $(IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
-	docker push ${IMG} || exit 0
-	$(MAKE) set-defaults
+	@sed -i '' "s#aikit-operator.${VERSION}#aikit-operator.v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
+	@sed -i '' "s#version: ${VERSION}#version: v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
+	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" config/Krmfile
+	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" bundle/Krmfile
 
 .PHONY: bundle-build
 bundle-build: set-vars ## Calls set-vars and then builds the bundle image $(BUNDLE_IMG).
@@ -154,6 +150,35 @@ bundle-build: set-vars ## Calls set-vars and then builds the bundle image $(BUND
 bundle-push: ## Pushes the aikit-operator-bundle image to $(BUNDLE_IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 	$(MAKE) set-defaults
+
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Downloads opm locally if necessary and install to $(pwd)/bin.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	echo "Downloading opm ..." ;\
+	curl -SLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.17.3/$(OS)-$(ARCH)-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v2021.2.0,example.com/operator-bundle:v2021.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
+
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v2021.2.0).
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
 
 # Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
 # This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
@@ -169,9 +194,8 @@ catalog-push: ## Pushes the aikit-operator-catalog`image to $(CATALOG_IMG) and t
 	$(MAKE) set-defaults
 
 ##@ Deployment
-
 deploy: set-vars ## Calls set-vars and deploys aikit-operator using operator-sdk and OLM
-	operator-sdk run bundle -n $(OC_PROJECT) $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+	operator-sdk run bundle -n $(OC_PROJECT) $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 	$(MAKE) set-defaults
 
 undeploy: set-vars ## Calls set-vars and undeploys aikit-operator deployed by operator-sdk and OLM
@@ -179,5 +203,5 @@ undeploy: set-vars ## Calls set-vars and undeploys aikit-operator deployed by op
 	$(MAKE) set-defaults
 
 .PHONY: bundle-validate
-bundle-validate::
+bundle-validate:
 	@operator-sdk bundle validate ./bundle --select-optional name=operatorhub  --optional-values=k8s-version=1.17  --select-optional suite=operatorframework --optional-values=k8s-version=1.17

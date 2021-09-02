@@ -47,3 +47,4 @@ spec:
   provider:
     name: Intel
   version: 0.0.0
+  minKubeVersion: 1.17.0
