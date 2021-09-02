@@ -38,7 +38,7 @@ openAPI:
       x-k8s-cli:
         substitution:
           name: IMAGE
-          pattern: ${IMAGE_TAG_BASE}.${VERSION}
+          pattern: ${IMAGE_TAG_BASE}:${VERSION}
           values:
           - marker: ${IMAGE_TAG_BASE}
             ref: '#/definitions/io.k8s.cli.setters.IMAGE_TAG_BASE'

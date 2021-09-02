@@ -42,6 +42,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 OC_PROJECT ?= redhat-ods-applications
+GENERIC_IMAGE_TAG_BASE ?= registry.connect.redhat.com/intel/aikit-operator
 IMAGE_TAG_BASE ?= registry.connect.redhat.com/intel/aikit-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
@@ -119,7 +120,6 @@ endif
 endif
 
 ##@ Showing and Setting OC_PROJECT, IMAGE_TAG_BASE and VERSION values. Environment vars will override the defaults.
-
 show-vars: kustomize ## Show OC_PROJECT, IMAGE_TAG_BASE and VERSION values by calling 'kustomize cfg list-setters bundle/ --markdown -R'
 	@echo -n 'Showing vars under directory '
 	@$(KUSTOMIZE) cfg list-setters bundle --markdown -R || exit 0
@@ -137,8 +137,9 @@ set-vars: kustomize ## Set OC_PROJECT, IMAGE_TAG_BASE and VERSION values by call
 
 set-defaults: kustomize ## Sets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their default values
 	@unset OC_PROJECT IMAGE_TAG_BASE VERSION && $(MAKE) set-vars
-	@sed -i '' "s#aikit-operator.${VERSION}#aikit-operator.v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
-	@sed -i '' "s#version: ${VERSION}#version: v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
+	@sed -i '' "s#name: aikit-operator.${VERSION}#name: aikit-operator.v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
+	@sed -i '' "s#image: ${IMAGE_TAG_BASE}:${VERSION}#image: ${GENERIC_IMAGE_TAG_BASE}:${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
+	@sed -i '' "s#version: ${VERSION}#version: ${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
 	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" config/Krmfile
 	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" bundle/Krmfile
 
