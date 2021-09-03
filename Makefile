@@ -93,7 +93,7 @@ ifeq (,$(shell which kustomize 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(KUSTOMIZE)) ;\
 	echo "Downloading kustomize ..." ;\
-	curl -SLo - https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.1.3/kustomize_v4.1.3_$(OS)_$(ARCH).tar.gz | \
+	curl -SLo - https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.3.0/kustomize_v4.3.0_$(OS)_$(ARCH).tar.gz | \
 	tar xzf - -C bin/ ;\
 	}
 else
@@ -111,7 +111,7 @@ ifeq (,$(shell which helm-operator 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(HELM_OPERATOR)) ;\
 	echo "Downloading helm-operator ..." ;\
-	curl -SLo $(HELM_OPERATOR) https://github.com/operator-framework/operator-sdk/releases/download/v1.8.0/helm-operator_$(OS)_$(ARCH) ;\
+	curl -SLo $(HELM_OPERATOR) https://github.com/operator-framework/operator-sdk/releases/download/v1.9.2/helm-operator_$(OS)_$(ARCH) ;\
 	chmod +x $(HELM_OPERATOR) ;\
 	}
 else
@@ -137,11 +137,12 @@ set-vars: kustomize ## Set OC_PROJECT, IMAGE_TAG_BASE and VERSION values by call
 
 set-defaults: kustomize ## Sets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their default values
 	@unset OC_PROJECT IMAGE_TAG_BASE VERSION && $(MAKE) set-vars
-	@sed -i '' "s#name: aikit-operator.${VERSION}#name: aikit-operator.v${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
-	@sed -i '' "s#image: ${IMAGE_TAG_BASE}:${VERSION}#image: ${GENERIC_IMAGE_TAG_BASE}:${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
-	@sed -i '' "s#version: ${VERSION}#version: ${GENERIC_VERSION}#g" bundle/manifests/aikit-operator.clusterserviceversion.yaml
-	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" config/Krmfile
-	@sed -i '' "s#value: ${VERSION}#value: ${GENERIC_VERSION}#g" bundle/Krmfile
+	@$(KUSTOMIZE) cfg set config OC_PROJECT $(OC_PROJECT) -R 1>/dev/null || exit 0
+	@$(KUSTOMIZE) cfg set config IMAGE_TAG_BASE $(GENERIC_IMAGE_TAG_BASE) -R 1>/dev/null || exit 0
+	@$(KUSTOMIZE) cfg set config VERSION $(GENERIC_VERSION) -R 1>/dev/null || exit 0
+	@$(KUSTOMIZE) cfg set bundle OC_PROJECT $(OC_PROJECT) -R 1>/dev/null || exit 0
+	@$(KUSTOMIZE) cfg set bundle IMAGE_TAG_BASE $(GENERIC_IMAGE_TAG_BASE) -R 1>/dev/null || exit 0
+	@$(KUSTOMIZE) cfg set bundle VERSION $(GENERIC_VERSION) -R 1>/dev/null || exit 0
 
 .PHONY: bundle-build
 bundle-build: set-vars ## Calls set-vars and then builds the bundle image $(BUNDLE_IMG).
@@ -161,7 +162,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	echo "Downloading opm ..." ;\
-	curl -SLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.17.3/$(OS)-$(ARCH)-opm ;\
+	curl -SLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.18.0/$(OS)-$(ARCH)-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
