@@ -20,7 +20,8 @@
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=2021.2.0)
 # - use environment variables to overwrite this value (e.g export VERSION=2021.2.0)
 GENERIC_VERSION ?= 2021.2.0
-VERSION ?= ${GENERIC_VERSION}-dev-`git rev-parse --short HEAD`
+DAY_OF_YEAR ?= $(shell date +%-m%d%H)
+VERSION ?= `echo ${GENERIC_VERSION} | sed "s/\(.*\)[0-9])*/\1${DAY_OF_YEAR}/"`-dev-`git rev-parse --short HEAD`
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -197,7 +198,7 @@ catalog-push: ## Pushes the aikit-operator-catalog`image to $(CATALOG_IMG) and t
 
 ##@ Deployment
 deploy: set-vars ## Calls set-vars and deploys aikit-operator using operator-sdk and OLM
-	operator-sdk run bundle -n $(OC_PROJECT) $(IMAGE_TAG_BASE)-bundle:$(VERSION)
+	operator-sdk run bundle -n $(OC_PROJECT) $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 	$(MAKE) set-defaults
 
 undeploy: set-vars ## Calls set-vars and undeploys aikit-operator deployed by operator-sdk and OLM
@@ -206,4 +207,4 @@ undeploy: set-vars ## Calls set-vars and undeploys aikit-operator deployed by op
 
 .PHONY: bundle-validate
 bundle-validate:
-	@operator-sdk bundle validate ./bundle --select-optional name=operatorhub  --optional-values=k8s-version=1.17  --select-optional suite=operatorframework --optional-values=k8s-version=1.17
+	@operator-sdk bundle validate ./bundle --select-optional name=operatorhub  --optional-values=k8s-version=1.20  --select-optional suite=operatorframework --optional-values=k8s-version=1.20
