@@ -8,7 +8,7 @@ metadata:
           "apiVersion": "aikit.intel/v1alpha1",
           "kind": "AIKitContainer",
           "metadata": {
-            "name": "create-imagestream",
+            "name": "intel-aikit-container",
             "namespace": "redhat-ods-applications"
           },
           "spec": {
@@ -21,7 +21,7 @@ metadata:
                 "repo": "intel",
                 "name": "oneapi-aikit",
                 "version": "latest"
-              },
+              }
             },
             "nameOverride": ""
           }
@@ -198,4 +198,4 @@ spec:
     name: Intel
     url: https://software.intel.com/content/www/us/en/develop/tools/oneapi/application-catalog.html#gs.407z40
   version: 2021.2.0 # {"$openapi":"VERSION"}
-  replaces: aikit-operator.v2021.2.92221-dev-38cda35 # This is in case we need to replace some version in the future
+  # replaces: aikit-operator.v2021.2.92221-dev-38cda35 # This is in case we need to replace some version in the future

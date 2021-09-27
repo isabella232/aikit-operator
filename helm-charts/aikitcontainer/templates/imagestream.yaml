@@ -9,7 +9,7 @@ spec:
   lookupPolicy:
     local: true
   tags:
-  - name: {{ .Values.imagestream.version }}
+  - name: {{ .Values.imagestream.name }}
     from:
       kind: DockerImage
       name: {{ .Values.imagestream.registry.root }}/{{ .Values.imagestream.registry.repo }}/{{ .Values.imagestream.registry.name }}:{{ .Values.imagestream.registry.version }}

@@ -80,7 +80,7 @@ docker-build: set-vars ## Calls set-vars and then builds the aikit-operator imag
 
 docker-push: ## Pushes the aikit-operator image to $(IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
 	docker push ${IMG}
-	$(MAKE) set-defaults
+	# $(MAKE) set-defaults
 
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
@@ -152,7 +152,7 @@ bundle-build: set-vars ## Calls set-vars and then builds the bundle image $(BUND
 .PHONY: bundle-push
 bundle-push: ## Pushes the aikit-operator-bundle image to $(BUNDLE_IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
-	$(MAKE) set-defaults
+	# $(MAKE) set-defaults
 
 .PHONY: opm
 OPM = ./bin/opm
@@ -194,12 +194,12 @@ catalog-build: opm set-vars ## Calls set-vars and then builds the catalog image 
 .PHONY: catalog-push
 catalog-push: ## Pushes the aikit-operator-catalog`image to $(CATALOG_IMG) and then resets OC_PROJECT, IMAGE_TAG_BASE and VERSION to their defaults.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
-	$(MAKE) set-defaults
+	# $(MAKE) set-defaults
 
 ##@ Deployment
 deploy: set-vars ## Calls set-vars and deploys aikit-operator using operator-sdk and OLM
 	operator-sdk run bundle -n $(OC_PROJECT) $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
-	$(MAKE) set-defaults
+	# $(MAKE) set-defaults
 
 undeploy: set-vars ## Calls set-vars and undeploys aikit-operator deployed by operator-sdk and OLM
 	operator-sdk cleanup aikit-operator
