@@ -198,4 +198,4 @@ spec:
     name: Intel
     url: https://software.intel.com/content/www/us/en/develop/tools/oneapi/application-catalog.html#gs.407z40
   version: 2021.2.0 # {"$openapi":"VERSION"}
-  replaces: aikit-operator.v2021.2.92814 # This is in case we need to replace some version in the future
+  replaces: aikit-operator.v2021.2.92911 # This is in case we need to replace some version in the future
