@@ -34,13 +34,15 @@ In the OpenShift [web console](https://docs.openshift.com/container-platform/4.7
 ## Deploy the Operator
 
 ### From the OpenShift Console
+Once you have installed the Operator in OpenShift, you can manage it using the web console.
 
-Once you have installed the Operator in OpenShift, you can manage it using the web console. Navigate to `Installed Operators` and click `Create Notebook`.
+From the web console, ensure the project(namespace) `redhat-ods-applications` exists, otherwise create that project and select it.
+Then navigate to `Installed Operators -> Intel® oneAPI AI Analytics Toolkit Operator` and from `AiKitContainer` tab, click `Create AIKitContainer`.
 
 ## Integration with OpenShift Data Science and Open Data Hub
 The Operator integrates with the JupyterHub [Spawner](https://jupyterhub.readthedocs.io/en/stable/reference/spawners.html) in [Red Hat OpenShift Data Science](https://www.redhat.com/en/technologies/cloud-computing/openshift/openshift-data-science) and [Open Data Hub](https://opendatahub.io/docs.html). Simply create a `Notebook` resource, which deploys a JupyterLab interface containing the AI Kit developer tools and ready-to-run Jupyter notebooks.
 
-The `Create Notebook` button in the web console will build the container image and create an ImageStream. This enables selecting `Intel oneAPI AI Analytics Toolkit` image from the Jupyter Spawner `Notebook Image` menu. The [image](https://github.com/IntelAI/aikit-operator) is maintained by Intel.
+The `Create AIKitContainer` button in the web console will build the container image and create an ImageStream. This enables selecting `Intel oneAPI AI Analytics Toolkit` image from the Jupyter Spawner `Notebook Image` menu. The [image](https://github.com/IntelAI/aikit-operator) is maintained by Intel.
 
 ![spawner](images/spawner.png)
 
