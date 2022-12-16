@@ -1,17 +1,18 @@
 # Build the manager binary
-FROM registry.redhat.io/openshift4/ose-helm-operator:v4.8
+FROM registry.redhat.io/openshift4/ose-helm-operator:v4.9
 
 ### Required OpenShift Labels
 LABEL name="Intel\u00ae oneAPI Analytics Toolkit Operator" \
-      maintainer="kam.d.kasravi@intel.com" \
+      maintainer="abolfazl.shahbazi@intel.com, kam.d.kasravi@intel.com" \
       vendor="Intel Corporation" \
-      version="v2021.2.0" \
-      release="2021.2.0" \
+      version="v2022.3.0" \
+      release="2022.3.0" \
       summary="Intel\u00ae oneAPI Analytics Toolkit Operator" \
       description="Intel\u00ae oneAPI Analytics Toolkit Operator"
 
 USER root
-RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
+RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
+    yum -y update cyrus-sasl-lib
 USER 1001
 
 ENV HOME=/opt/helm
